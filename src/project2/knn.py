@@ -216,10 +216,10 @@ def main():
     pos_file_name = sys.argv[1]
     neg_file_name = sys.argv[2]
     out_file_name = 'knn.out'
-    k = sys.argv[3]
-    p = sys.argv[4]
+    k = int(sys.argv[3])
+    p = float(sys.argv[4])
     #n fold validation
-    n = sys.argv[5]
+    n = int(sys.argv[5])
     #get all data 
     #all data and shuffle the data
     [pos_data,_] = get_data(pos_file_name, 1)
