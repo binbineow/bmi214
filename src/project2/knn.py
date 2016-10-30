@@ -85,7 +85,6 @@ def knn_predict(pre_data,train_data,train_label,k,p):
 #Specificity = TN/(TN+FP)
 #Accuracy = (TP+TN)/total
 ####Calculate performance###############
-####Is there something called sklearn###
 def cal_performance(list_pred, list_true):
     #initialize paramters 
     tp = 0
@@ -133,14 +132,18 @@ def get_data(file_name0,label0):
 #function: check values of a list, if any of them is negative, replace it with zero
 #input: a list
 #output: a list with no negative scores
+
+def magic_round(x,n):
+    return format(round(x,n),'.2f')
+
 def write_output(file_name0,k,p,n,accu0,sensi0,speci0):
     fileout = open(file_name0,'w+')
     fileout.write('k: '+str(k)+'\n')
-    fileout.write('p: '+str(round(p,2))+'\n')
+    fileout.write('p: '+magic_round(p,2)+'\n')
     fileout.write('n: '+str(n)+'\n')
-    fileout.write('accuracy: '+str(round(accu0,2))+'\n')
-    fileout.write('sensitivity: '+str(round(sensi0,2))+'\n')
-    fileout.write('specificity: '+str(round(speci0,2)))
+    fileout.write('accuracy: '+magic_round(accu0,2)+'\n')
+    fileout.write('sensitivity: '+magic_round(sensi0,2)+'\n')
+    fileout.write('specificity: '+magic_round(speci0,2))
     fileout.close()
 
 #fix
