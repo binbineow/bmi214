@@ -159,8 +159,6 @@ def knn_n_fold(pos_data,neg_data,pos_n_fold_set,neg_n_fold_set,k,p):
     #n fold loop
     for i in range(0,len(pos_n_fold_set)):
         pos_train_index = list(set_total_pos - pos_n_fold_set[i])
-        print(pos_train_index)
-        print(pos_n_fold_set[i])
         neg_train_index = list(set_total_neg - neg_n_fold_set[i])
         #generating training data
         train_data = numpy.concatenate([pos_data[pos_train_index],neg_data [neg_train_index]])
