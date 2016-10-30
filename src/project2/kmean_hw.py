@@ -122,18 +122,18 @@ def get_data(file_name0):
 #        and all possible best alignments
 def main():
     #initinize files and get I/O file names
-    k = sys.argv[1]
+    k = int(sys.argv[1])
     data_file_name = sys.argv[2]
-    out_file_name = 'knn.out'
+    out_file_name = 'kmeans.out'
     #get data from data_file_name
     data0 = get_data(data_file_name)
     # maximum iteration
-    max_it = sys.argv[3]
+    max_it = int(sys.argv[3])
     # if available get centroid files and load data
     # if not, randomly generating centroids
     if len(sys.argv) > 4:
         centro_file_name = sys.argv[4]
-        data_centro = get_data(+centro_file_name)
+        data_centro = get_data(centro_file_name)
         data_centro = data_centro[:k]
     else:
         data_centro = random.sample(list(data0),k)

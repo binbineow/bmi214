@@ -160,7 +160,7 @@ def main():
         data_centro = get_data(path0+centro_file_name)
         data_centro = data_centro[:k]
     else:
-        data_centro = random.sample(list(data0),k)
+        data_centro = generate_centro(data0,k)
     '''
         
     #for debugging on local only
