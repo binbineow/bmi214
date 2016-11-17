@@ -34,23 +34,30 @@ import numpy
 from scipy.spatial.distance import squareform, pdist
 import argparse
 from collections import defaultdict
-import cPickle as pickle
 
+#input: opened input file
+#output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
+#round a float values ensuring it has two decimial places
+def magic_round(x,n):
+    return format(x,'.'+str(n)+'f')
 
-
-
-
-
-#function: ouptut performance to knn.out
-#input: assignment of each points to clusters
-#output: write values into the kmeans.out
-def write_output(file_name0,list0):
-    fileout = open(file_name0,'w+')
-    index0 = 1
-    for cluster0 in list0:
-        fileout.write(str(index0)+'\t'+str(cluster0+1)+'\n')
-        index0 +=1
-
+#function get sequence a and b    
+#input: opened input file
+#output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
+def give_line(list0,sep0,n=-1):
+    if len(list0) >0:
+        if n > -1:
+            element0 = magic_round(list0[0], n)
+        else:
+            element0 = str(list0[0])
+        line0 = str(element0)
+        for element0 in list0[1:]:
+            if n > -1:
+                element0 = magic_round(element0, n)
+            line0 = line0 + sep0 + str(element0)
+        return line0    
+    else:
+        return ''
 #function: parse the inputline specified and set the paramters into the default values
 #input: opened input file
 #output seqA and seqB    
@@ -87,23 +94,62 @@ class Atoms_info:
         self.dict_bond = defaultdict(list)
         self.dict_nonbond = defaultdict(list)
         self.input_values = Input_values
-        ###get input
+        ###get input position and distance
         self.get_pos0()
         self.dist0_matrix = self.get_dist(self.pos_matrix)
         self.dist_matrix = self.get_dist(self.pos_matrix)
-        ##calculate distance matrix at step0
-        #self.dist_matrix_xyz0 = []
-        #self.dist_matrix_xyz0.append(self.get_dist(self.pos_matrix[:,0:1]))
-        #print(self.get_dist(self.pos_matrix[:,0:1]).shape)
-        #self.dist_matrix_xyz0.append(self.get_dist(self.pos_matrix[:,1:2]))
-        #self.dist_matrix_xyz0.append(self.get_dist(self.pos_matrix[:,2:3]))
-        # bond_pair is a list of tuble list convenient for calculating 
         self.bond_pair = self.get_pair(self.dict_bond)
         self.get_nonbond()
         self.nonbond_pair = self.get_pair(self.dict_nonbond)
+        #set accerlations
         self.a = numpy.zeros((len(self.pos_matrix),3))
-
-     
+        #prepare output
+        
+        
+        
+    #function   energy should be only calculated when key0 < x
+                #getting the list of pairs
+    #input: opened input file
+    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery  
+    def prepare_output(self):
+        self.file_energy = open(self.input_values.out + '_out.erg','w+')
+        self.file_energy.write(give_line(['#','step','E_k','E_b','E_nB','E_tot'],'\t')+'\n')
+        self.file_rvc =  open(self.input_values.out + '_out.rvc','w+')
+    
+    #function   energy should be only calculated when key0 < x
+                #getting the list of pairs
+    #input: opened input file
+    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
+    def write_energy(self,list0):
+        self.file_energy.write(str(list0[0])+'\t'+give_line(list0[1:],'\t',n=1)+'\n')
+    
+    #function   energy should be only calculated when key0 < x
+                #getting the list of pairs
+    #input: opened input file
+    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
+    def write_rvc(self,line0):
+        self.file_rvc.write(line0)
+        for i in range(0,len(self.pos_matrix)):
+            line0_out = str(i+1)+'\t' + give_line(numpy.concatenate([self.pos_matrix[i],self.vel_matrix[i]]),'\t',n=4) 
+            line0_out = line0_out + '\t'+ give_line([int(x)+1 for x in self.dict_bond[i]],'\t',n=0)
+            self.file_rvc.write(line0_out+'\n')
+    
+    #function   energy should be only calculated when key0 < x
+                #getting the list of pairs
+    #input: opened input file
+    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
+    def write_overflow(self,iteration0):
+        self.file_energy.write('#The system becomes unstable at the iteration '+str(iteration0)+'. The program terminates')
+        self.file_rvc.write('#The system becomes unstable at the iteration '+str(iteration0)+'. The program terminates')
+        
+    #function   energy should be only calculated when key0 < x
+                #getting the list of pairs
+    #input: opened input file
+    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery  
+    def close_output(self):
+        self.file_energy.close()
+        self.file_rvc.close()
+    
     #function   energy should be only calculated when key0 < x
                 #getting the list of pairs
     #input: opened input file
@@ -122,6 +168,8 @@ class Atoms_info:
                 self.dict_bond[n_atom] = bond_info
                 #update atom number
                 n_atom += 1
+            else:
+                self.first_line = line0
         #convert the matrix to numpy array
         self.pos_matrix = numpy.array(self.pos_matrix)
         self.vel_matrix = numpy.array(self.vel_matrix)
@@ -187,7 +235,7 @@ class Atoms_info:
         bond_pot_energy = self.cal_potential(self.bond_pair,self.input_values.kB)
         nonbond_pot_energy = self.cal_potential(self.nonbond_pair,self.input_values.kN)
         total_energery = sum([kinetic_energy,bond_pot_energy,nonbond_pot_energy])
-        return kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery
+        return [kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery]
     
     #function get sequence a and b
     #input: opened input file
@@ -237,7 +285,7 @@ class Atoms_info:
     #function get sequence a and b    
     #input: opened input file
     #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
-    def upate_velocity_verlet(self):
+    def update_velocity_verlet(self):
         #clear up force
         self.force = numpy.zeros((len(self.pos_matrix),3))
         self.vel_matrix += 0.5*self.a*self.input_values.dt
@@ -246,7 +294,8 @@ class Atoms_info:
         self.update_force()
         self.a = 1.0/self.input_values.m*self.force
         self.vel_matrix +=  0.5*self.a*self.input_values.dt
-        
+
+    
 
 
 #function: the main function of this project
@@ -259,17 +308,26 @@ def main():
     input_values = parse_input0()
     #set initial conditions
     protein = Atoms_info(input_values)
+    protein.prepare_output()
+    protein.write_rvc(protein.first_line)
     #main loop
     #in this example, atom index starts at 0 except during the ouput 
     #remember to do i+1 during output
-    list1 = protein.cal_energy()
-    print(list1)
+    total_energy0 = protein.cal_energy()[-1]
     for iteration0 in range(1,input_values.n+1):
         #list1 = protein.cal_energy()
-        protein.upate_velocity_verlet()
+        protein.update_velocity_verlet()
         if numpy.mod(iteration0,10) == 0:
+            #calculate energy
             list1 = protein.cal_energy()
-            print(iteration0,list1)
+            #write output if not overflowed
+            if list1[-1] > 10 * total_energy0 or list1[-1] < total_energy0/10.0:
+                protein.write_overflow(iteration0)
+            else:
+                protein.write_rvc('#At time step '+str(iteration0)+',energy = '+str(list1[-1])+'kJ\n')
+                protein.write_energy([iteration0]+list1)
+    #close the output file
+    protein.close_output()
         
     #output
 #     The ERG file should contain your energy values at every 10th time step.  
@@ -287,9 +345,6 @@ def main():
 #     inclination), so you should have about 100 frames in your output file. Positions and velocities should be
 #      written out to exactly 4 decimal places.
     # #At time step 610,energy = 273.911kJ is an example of in-between frame
-    
-
-
 
 
 if __name__ == '__main__':
