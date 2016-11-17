@@ -19,7 +19,7 @@ import sys
 from random import shuffle
 
 
-#function: check values of a list, if any of them is negative, replace it with zero
+#function: calculate eucildiean distance between two sets of points and return distance array
 #input: two numpy matrix data points to be predicted and data points in the training set
 #output: euclidean distance from each training data to 
 ####Euclidean###########
@@ -43,9 +43,9 @@ def sort_based_2(list1,list2):
     list1,list2 = zip(*sorted(list_two,key=lambda x: x[1]))
     return list1,list2
 
-#function: check values of a list, if any of them is negative, replace it with zero
-#input: two numpy matrix data points to be predicted and data points in the training set
-#output: euclidean distance from each training data to 
+#function: predict one data point (1/0) based on distance to all points and k and p values
+#input: distance (dist0), k, p and labels of training data(0,1)
+#output: 1 or 0
 def get_pred(dist0,train_label,k,p):
     index0 = range(0,len(dist0))
     [close_train,_] = sort_based_2(index0,dist0)
@@ -60,9 +60,9 @@ def get_pred(dist0,train_label,k,p):
         return 0
 
 #fix
-#function: check values of a list, if any of them is negative, replace it with zero
-#input: a list
-#output: a list of 
+#function: main knn function
+#input:training data and validation data and k, p 
+#output: output of 1,0 for each validation data points
 ####KNN###########
 def knn_predict(pre_data,train_data,train_label,k,p):
     #the output prediction
@@ -113,10 +113,9 @@ def cal_performance(list_pred, list_true):
     return accu_i,sensi_i,speci_i
 
 
-#fix
-#function: check values of a list, if any of them is negative, replace it with zero
-#input: a list
-#output: a list with no negative scores
+#function: get data from file_name0 based on label0 to dtermine it's ALL or AML
+#input: file_name string and (0/1)
+#output: numpy array of all data with 0 or 1 labels
 def get_data(file_name0,label0):
     data0 = []
     label_list = []
@@ -128,14 +127,15 @@ def get_data(file_name0,label0):
     return numpy.array(data0).T, numpy.array(label_list)
 
 
-#fix
-#function: check values of a list, if any of them is negative, replace it with zero
-#input: a list
-#output: a list with no negative scores
 
+#round a float values ensuring it has two decimial places
 def magic_round(x,n):
     return format(round(x,n),'.2f')
 
+
+#function: ouptut performance to knn.out
+#input:accuarcy, sensitivity, specificity values to be ouputed
+#output: write values into the knn.out file
 def write_output(file_name0,k,p,n,accu0,sensi0,speci0):
     fileout = open(file_name0,'w+')
     fileout.write('k: '+str(k)+'\n')
@@ -146,10 +146,9 @@ def write_output(file_name0,k,p,n,accu0,sensi0,speci0):
     fileout.write('specificity: '+magic_round(speci0,2))
     fileout.close()
 
-#fix
-#function: check values of a list, if any of them is negative, replace it with zero
-#input: a list
-#output: a list with no negative scores
+#function: main knn function after getting pos_data and neg_data separated
+#input: a list of positive and negative values and parameter k,p
+#output: knn perforamence normalized based on patient number
 def knn_n_fold(pos_data,neg_data,pos_n_fold_set,neg_n_fold_set,k,p):
     accu0 = 0
     sensi0 = 0
@@ -183,10 +182,10 @@ def knn_n_fold(pos_data,neg_data,pos_n_fold_set,neg_n_fold_set,k,p):
     #return weighted average values for three performance scores
     return accu0/total_n,sensi0/total_n,speci0/total_n
 
-#fix
-#function: check values of a list, if any of them is negative, replace it with zero
-#input: a list
-#output: a list with no negative scores
+
+#function: perform n fold cross validation by breaking the dataset down
+#input: len0 is the total length of data, and n is n-fold value
+#output: a list of mask for n-fold cross validation
 def get_n_fold(len0,n):
     list_out = []
     #calcualte div and mod in len0/n
@@ -207,11 +206,10 @@ def get_n_fold(len0,n):
     #return a list of sets separting 0 to len0 to n parts with relatively even
     return list_out
             
-#fix
+
 #function: the main function of this project
-#input: read in the input file with specification and sequence information
-#output: perform Smith-Waterman alignment (global or local), output best matching scores
-#        and all possible best alignments
+#input: read in the input file with file names and k, p, n 
+#output: print knn.out functions
 def main():
     #initinize files and get I/O file names
     pos_file_name = sys.argv[1]

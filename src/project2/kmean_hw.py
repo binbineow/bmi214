@@ -15,10 +15,6 @@
 #Scanning yeast_gene_names.txt you will see that the ribosomes are the 
 #last 121 genes in the file.
 
-#you must number the clusters based on the order they are entered in 
-#the centroid file, starting at 1. The first centroid in the file will
-# be centroid 1, the 2nd will be centroid 2, etc.
-# When centroids are generated randomly, they should be numbered 1 to k.
 
 # the number of iterations completed should be
 # written to <stdout> as shown below:
@@ -46,24 +42,23 @@ def compute_closest_means(means,data):
     #return the most nearby means
     return numpy.argmin(numpy.array(out).T, axis=1)
 
-#fix
-#function: check values of a list, if any of them is negative, replace it with zero
-#input: a list
-#output: a list with no negative scores
+
+#function: update the new centroids
+#input: a list of distance and data points
+#output:reutnr the new centroids/means matrix
 def compute_new_means(closest_means, data):
     groups = defaultdict(list)
     for i in range(len(closest_means)):
-        #fix mer
         groups[closest_means[i]].append(data[i])
     means = []
     for k,v in sorted(groups.iteritems(),key=lambda x: x[0]):
         means.append(numpy.average(v,axis=0))
     return numpy.array(means)
 
-#fix
-#function: check values of a list, if any of them is negative, replace it with zero
-#input: a list
-#output: a list with no negative scores
+
+#function: check two list of clustering to see if they are the same
+#input: two lists of cluster assigment
+#output: whether if any assignment is updates
 def same_means(samp_one, samp_two):
     match_dict = {}
     for x,y in zip(list(samp_one),list(samp_two)):
@@ -74,10 +69,10 @@ def same_means(samp_one, samp_two):
             match_dict[x] = y
     return True
 
-#fix
-#function: check values of a list, if any of them is negative, replace it with zero
-#input: a list
-#output: a list with no negative scores
+
+#function: main kmeans function to assign cluster until it convers or reach the maximum iteration
+#input: data, centroids, and paramters k and max_int
+#output: assignments and iteration when the kmeans ended
 def kmeans(k,data,means,max_it):
     for i in range(1,max_it+1):
         #i is the iteration number 
@@ -91,10 +86,10 @@ def kmeans(k,data,means,max_it):
     return closest_means, i
 
 
-#fix
-#function: check values of a list, if any of them is negative, replace it with zero
-#input: a list
-#output: a list with no negative scores
+
+#function: ouptut performance to knn.out
+#input: assignment of each points to clusters
+#output: write values into the kmeans.out
 def write_output(file_name0,list0):
     fileout = open(file_name0,'w+')
     index0 = 1
@@ -102,10 +97,9 @@ def write_output(file_name0,list0):
         fileout.write(str(index0)+'\t'+str(cluster0+1)+'\n')
         index0 +=1
 
-#fix
-#function: check values of a list, if any of them is negative, replace it with zero
-#input: a list
-#output: a list with no negative scores
+#function: get data from file_name0 based on label0 to dtermine it's ALL or AML
+#input: file_name string 
+#output: numpy array of all data
 def get_data(file_name0):
     data0 = []
     for line0 in open(file_name0):
@@ -115,11 +109,10 @@ def get_data(file_name0):
     return numpy.array(data0)
 
 
-#fix
+
 #function: the main function of this project
-#input: read in the input file with specification and sequence information
-#output: perform Smith-Waterman alignment (global or local), output best matching scores
-#        and all possible best alignments
+#input: read in the input file with k value
+#output: clusters of points based on centroid provided or generated
 def main():
     #initinize files and get I/O file names
     k = int(sys.argv[1])
