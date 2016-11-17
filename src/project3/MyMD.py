@@ -90,11 +90,13 @@ class Atoms_info:
         ###get input
         self.get_pos0()
         self.dist0_matrix = self.get_dist(self.pos_matrix)
+        self.dist_matrix = self.get_dist(self.pos_matrix)
         ##calculate distance matrix at step0
-        self.dist_matrix_xyz0 = []
-        self.dist_matrix_xyz0.append(self.get_dist(self.pos_matrix[:,0:1]))
-        self.dist_matrix_xyz0.append(self.get_dist(self.pos_matrix[:,1:2]))
-        self.dist_matrix_xyz0.append(self.get_dist(self.pos_matrix[:,2:3]))
+        #self.dist_matrix_xyz0 = []
+        #self.dist_matrix_xyz0.append(self.get_dist(self.pos_matrix[:,0:1]))
+        #print(self.get_dist(self.pos_matrix[:,0:1]).shape)
+        #self.dist_matrix_xyz0.append(self.get_dist(self.pos_matrix[:,1:2]))
+        #self.dist_matrix_xyz0.append(self.get_dist(self.pos_matrix[:,2:3]))
         # bond_pair is a list of tuble list convenient for calculating 
         self.bond_pair = self.get_pair(self.dict_bond)
         self.get_nonbond()
@@ -129,7 +131,7 @@ class Atoms_info:
     #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery  
     def get_dist(self,pos_matrix):
         dist_matrix = squareform(pdist(pos_matrix,'euclidean'))
-        pickle.dump(dist_matrix,open('matrix.pic','w+'))
+        #pickle.dump(dist_matrix,open('matrix.pic','w+'))
         return numpy.array(dist_matrix)
  
     #function   energy should be only calculated when key0 < x
@@ -141,8 +143,9 @@ class Atoms_info:
         list_y = []
         for key0, val0 in dict0.iteritems():
             for x in val0:
-                list_x.append(key0)
-                list_y.append(x)
+                if key0 < x:
+                    list_x.append(key0)
+                    list_y.append(x)
         return numpy.array([list_x,list_y])
     
     #function   energy should be only calculated when key0 < x
@@ -153,7 +156,7 @@ class Atoms_info:
         for i in range(0,len(self.pos_matrix)):
             list_nonbond = []
             for j in range(0,len(self.pos_matrix)):
-                if self.dist0_matrix[i,j] < self.input_values.nbCutoff and i != j and not j in self.dict_bond[i]:
+                if self.dist0_matrix[i,j] < self.input_values.nbCutoff and i < j and not j in self.dict_bond[i]:
                     list_nonbond.append(j)
             self.dict_nonbond[i] = list_nonbond
      
@@ -169,26 +172,17 @@ class Atoms_info:
     #input: opened input file
     #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery  
     def cal_potential(self,list_to_cal,constant0):
-        #print(list_to_cal)
-        #print(list_to_cal.shape)
-        #print(self.dist_matrix[list_to_cal[:]]-self.dist0_matrix[list_to_cal[:]])
-        #print(list_to_cal.shape)
         #print(self.dist_matrix.shape)
-        #print(self.dist_matrix[list_to_cal[0],list_to_cal[1]].shape)
         delta_matrix = self.dist_matrix[list_to_cal[0],list_to_cal[1]]-self.dist0_matrix[list_to_cal[0],list_to_cal[1]]
-        #print(delta_matrix.shape)
-        #print(self.dist_matrix.shape)
-        #print(delta_matrix)
-        #print(delta_matrix)
         potential_energy = 0.5*constant0*numpy.square(delta_matrix)
+        #print(potential_energy.shape)
         #we are double counting the energy, so /2
-        return numpy.sum(potential_energy)/2
+        return numpy.sum(potential_energy)
 
     #function get sequence a and b
     #input: opened input file
     #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery  
     def cal_energy(self):
-        self.dist_matrix = self.get_dist(self.pos_matrix)
         kinetic_energy = self.cal_kinetic()
         bond_pot_energy = self.cal_potential(self.bond_pair,self.input_values.kB)
         nonbond_pot_energy = self.cal_potential(self.nonbond_pair,self.input_values.kN)
@@ -198,7 +192,7 @@ class Atoms_info:
     #function get sequence a and b
     #input: opened input file
     #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
-    def update_force(self):
+    def update_force_old(self):
         #calculate distance based on x,y,z axises 
         self.dist_matrix_xyz = []
         self.dist_matrix_xyz.append(self.get_dist(self.pos_matrix[:,0:1]))
@@ -209,20 +203,46 @@ class Atoms_info:
             for dimention0 in range(0,3):
                 delta_r = self.dist_matrix_xyz[dimention0][atom_i,atom_j] - self.dist_matrix_xyz0[dimention0][atom_i,atom_j]
                 vec_j2i = self.pos_matrix[atom_j,dimention0] - self.pos_matrix[atom_i,dimention0]
-                self.force[atom_i,dimention0] += self.input_values.kB*delta_r*vec_j2i
+                self.force[atom_i,dimention0] += self.input_values.kB*delta_r*vec_j2i/abs(vec_j2i)
         #unbonded force
         for atom_i,atom_j in zip(self.nonbond_pair[0],self.nonbond_pair[1]):
             for dimention0 in range(0,3):
                 delta_r = self.dist_matrix_xyz[dimention0][atom_i,atom_j] - self.dist_matrix_xyz0[dimention0][atom_i,atom_j]
                 vec_j2i = self.pos_matrix[atom_j,dimention0] - self.pos_matrix[atom_i,dimention0]
                 #print(delta_r,vec_j2i)
-                self.force[atom_i,dimention0] += self.input_values.kN*delta_r*vec_j2i
-        
+                self.force[atom_i,dimention0] += self.input_values.kN*delta_r*vec_j2i/abs(vec_j2i)
+        #function get sequence a and b
+    
+    #function get sequence a and b    
+    #input: opened input file
+    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
+    def update_force(self):
+        #bonded force
+        for atom_i,atom_j in zip(self.bond_pair[0],self.bond_pair[1]):
+            b = self.dist_matrix[atom_i,atom_j]
+            force0 = self.input_values.kB * (b - self.dist0_matrix[atom_i,atom_j])
+            force_vec = force0/b*(self.pos_matrix[atom_j]-self.pos_matrix[atom_i])
+            #print(len(force_vec))
+            self.force[atom_i] += force_vec
+            self.force[atom_j] -= force_vec
+        #unbonded force
+        for atom_i,atom_j in zip(self.nonbond_pair[0],self.nonbond_pair[1]):
+            b = self.dist_matrix[atom_i,atom_j]
+            force0 = self.input_values.kN * (b - self.dist0_matrix[atom_i,atom_j])
+            force_vec = force0/b*(self.pos_matrix[atom_j]-self.pos_matrix[atom_i])
+            self.force[atom_i] += force_vec
+            self.force[atom_j] -= force_vec
+
+    
+    #function get sequence a and b    
+    #input: opened input file
+    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
     def upate_velocity_verlet(self):
         #clear up force
         self.force = numpy.zeros((len(self.pos_matrix),3))
         self.vel_matrix += 0.5*self.a*self.input_values.dt
         self.pos_matrix = self.pos_matrix + self.vel_matrix*self.input_values.dt
+        self.dist_matrix = self.get_dist(self.pos_matrix)
         self.update_force()
         self.a = 1.0/self.input_values.m*self.force
         self.vel_matrix +=  0.5*self.a*self.input_values.dt
@@ -242,13 +262,14 @@ def main():
     #main loop
     #in this example, atom index starts at 0 except during the ouput 
     #remember to do i+1 during output
+    list1 = protein.cal_energy()
+    print(list1)
     for iteration0 in range(1,input_values.n+1):
         #list1 = protein.cal_energy()
         protein.upate_velocity_verlet()
-        list1 = protein.cal_energy()
         if numpy.mod(iteration0,10) == 0:
-            print(iteration0)
-            print(list1)
+            list1 = protein.cal_energy()
+            print(iteration0,list1)
         
     #output
 #     The ERG file should contain your energy values at every 10th time step.  
