@@ -237,30 +237,7 @@ class Atoms_info:
         total_energery = sum([kinetic_energy,bond_pot_energy,nonbond_pot_energy])
         return [kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery]
     
-    #function get sequence a and b
-    #input: opened input file
-    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
-    def update_force_old(self):
-        #calculate distance based on x,y,z axises 
-        self.dist_matrix_xyz = []
-        self.dist_matrix_xyz.append(self.get_dist(self.pos_matrix[:,0:1]))
-        self.dist_matrix_xyz.append(self.get_dist(self.pos_matrix[:,1:2]))
-        self.dist_matrix_xyz.append(self.get_dist(self.pos_matrix[:,2:3]))
-        #bonded force
-        for atom_i,atom_j in zip(self.bond_pair[0],self.bond_pair[1]):
-            for dimention0 in range(0,3):
-                delta_r = self.dist_matrix_xyz[dimention0][atom_i,atom_j] - self.dist_matrix_xyz0[dimention0][atom_i,atom_j]
-                vec_j2i = self.pos_matrix[atom_j,dimention0] - self.pos_matrix[atom_i,dimention0]
-                self.force[atom_i,dimention0] += self.input_values.kB*delta_r*vec_j2i/abs(vec_j2i)
-        #unbonded force
-        for atom_i,atom_j in zip(self.nonbond_pair[0],self.nonbond_pair[1]):
-            for dimention0 in range(0,3):
-                delta_r = self.dist_matrix_xyz[dimention0][atom_i,atom_j] - self.dist_matrix_xyz0[dimention0][atom_i,atom_j]
-                vec_j2i = self.pos_matrix[atom_j,dimention0] - self.pos_matrix[atom_i,dimention0]
-                #print(delta_r,vec_j2i)
-                self.force[atom_i,dimention0] += self.input_values.kN*delta_r*vec_j2i/abs(vec_j2i)
-        #function get sequence a and b
-    
+ 
     #function get sequence a and b    
     #input: opened input file
     #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
@@ -317,15 +294,14 @@ def main():
     for iteration0 in range(1,input_values.n+1):
         #list1 = protein.cal_energy()
         protein.update_velocity_verlet()
-        if numpy.mod(iteration0,10) == 0:
-            #calculate energy
-            list1 = protein.cal_energy()
-            #write output if not overflowed
-            if list1[-1] > 10 * total_energy0 or list1[-1] < total_energy0/10.0:
+        #calculate energy
+        list1 = protein.cal_energy()
+        if list1[-1] > 10 * total_energy0 or list1[-1] < total_energy0/10.0:
                 protein.write_overflow(iteration0)
-            else:
-                protein.write_rvc('#At time step '+str(iteration0)+',energy = '+str(list1[-1])+'kJ\n')
-                protein.write_energy([iteration0]+list1)
+                break
+        if numpy.mod(iteration0,10) == 0:
+            protein.write_rvc('#At time step '+str(iteration0)+',energy = '+str(list1[-1])+'kJ\n')
+            protein.write_energy([iteration0]+list1)
     #close the output file
     protein.close_output()
         
