@@ -19,14 +19,6 @@
 # Update the velocities (for t+dt/2) on each atom (the forces should be initialized to zero
 #                                                   when you do this in the first time step, 
 #                                                   so your velocities won't change yet)
-# Update the positions of each atom
-# If you are keeping global variables for forces and energy then make sure that they are reset to zero.
-# For each interaction pair (bonded and non-bonded):
-# Calculate the potential energy and update the total potential energy
-# Calculate the force and update the total forces in each dimension for each atom
-# Update the velocities (for t+dt) on each atom and calculate the kinetic energy
-# Write the appropriate output every 10 time steps. Do this for all file types: 
-# (rvc, crd, files needed to generate euc)
 
 
 #import necessary packages
@@ -41,7 +33,7 @@ from collections import defaultdict
 def magic_round(x,n):
     return format(x,'.'+str(n)+'f')
 
-#function get sequence a and b    
+#function take a list and covnert into a line
 #input: opened input file
 #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
 def give_line(list0,sep0,n=-1):
@@ -58,9 +50,14 @@ def give_line(list0,sep0,n=-1):
         return line0    
     else:
         return ''
+    
 #function: parse the inputline specified and set the paramters into the default values
 #input: opened input file
-#output seqA and seqB    
+#output eight values specified below  
+# Update the positions of each atom
+# If you are keeping global variables for forces and energy then make sure that they are reset to zero.
+# For each interaction pair (bonded and non-bonded):
+# Calculate the potential energy and update the total potential energy 
 def parse_input0():
     program_name = 'MyMD'
     parser0 = argparse.ArgumentParser(prog=program_name)
@@ -83,9 +80,11 @@ def parse_input0():
     return input_values
 
 
-#function: the main function of this project
-#input: read in the input file with k value
-#output: clusters of points based on centroid provided or generated       
+#function: the main class of this program
+#input: read in the input file with values
+#output: the kinetic energy in the second column, the bond potential energy in the third column, 
+#     the nonbond potential energy in the fourth column, and the total energy in the last column.
+#      All values should be written out to exactly 1 decimal place.  
 class Atoms_info:
     def __init__(self,Input_values):
         self.pos_matrix = []
@@ -116,17 +115,23 @@ class Atoms_info:
         self.file_energy.write(give_line(['#','step','E_k','E_b','E_nB','E_tot'],'\t')+'\n')
         self.file_rvc =  open(self.input_values.out + '_out.rvc','w+')
     
-    #function   energy should be only calculated when key0 < x
+    #function   energy should be only calculat
                 #getting the list of pairs
-    #input: opened input file
-    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
+    #input: a list of energy
+    #output:
+    #he RVC output file will look very similar to the input RVC file, but is tab-delimited. 
+    #During simulation, you should output all the atoms' IDs (1-indexed), positions, velocities and
+    #connectivities every 10 time steps, including at t=0, concatenated together into one RVC output y 
     def write_energy(self,list0):
         self.file_energy.write(str(list0[0])+'\t'+give_line(list0[1:],'\t',n=1)+'\n')
     
     #function   energy should be only calculated when key0 < x
                 #getting the list of pairs
-    #input: opened input file
-    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
+    #input: the first line of rvc output and lines
+    #output:
+    #10 steps, after 20 steps, etc.)  You should include the original input RVC file and you should use 
+    #1000 as the default number of total steps (feel free to perform longer simulations if you have the time and 
+
     def write_rvc(self,line0):
         self.file_rvc.write(line0)
         for i in range(0,len(self.pos_matrix)):
@@ -134,18 +139,17 @@ class Atoms_info:
             line0_out = line0_out + '\t'+ give_line([int(x)+1 for x in self.dict_bond[i]],'\t',n=0)
             self.file_rvc.write(line0_out+'\n')
     
-    #function   energy should be only calculated when key0 < x
-                #getting the list of pairs
-    #input: opened input file
-    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
+    #function   print the warning when the energy overflows
+    #input: iteration number when the program stops
+    #output:     (inclination), so you should have about 100 frames in your output file. Positions and velocities should be
+    #     written out to exactly 4 decimal places.
     def write_overflow(self,iteration0):
         self.file_energy.write('#The system becomes unstable at the iteration '+str(iteration0)+'. The program terminates')
         self.file_rvc.write('#The system becomes unstable at the iteration '+str(iteration0)+'. The program terminates')
         
-    #function   energy should be only calculated when key0 < x
-                #getting the list of pairs
-    #input: opened input file
-    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery  
+    #function  close all functions
+    #input: N/A
+    #output: N/A  
     def close_output(self):
         self.file_energy.close()
         self.file_rvc.close()
@@ -173,6 +177,7 @@ class Atoms_info:
         #convert the matrix to numpy array
         self.pos_matrix = numpy.array(self.pos_matrix)
         self.vel_matrix = numpy.array(self.vel_matrix)
+        
     #function   energy should be only calculated when key0 < x
                 #getting the list of pairs
     #input: opened input file
@@ -196,10 +201,11 @@ class Atoms_info:
                     list_y.append(x)
         return numpy.array([list_x,list_y])
     
-    #function   energy should be only calculated when key0 < x
-                #getting the list of pairs
-    #input: opened input file
-    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery
+    #functiong get nonbond pairs
+    #input: self
+    #output:  
+    # The ERG file should contain your energy values at every 10th time step.  
+    # The lines should be tab-delimited, with the time step number in the first column, 
     def get_nonbond(self):
         for i in range(0,len(self.pos_matrix)):
             list_nonbond = []
@@ -216,8 +222,8 @@ class Atoms_info:
         kinetic_energy = numpy.sum(kinetic_energy)
         return kinetic_energy
 
-    #function get sequence a and b
-    #input: opened input file
+    #function convert a list of atom pairs into nergey 
+    #input: atom pairs
     #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery  
     def cal_potential(self,list_to_cal,constant0):
         #print(self.dist_matrix.shape)
@@ -227,8 +233,8 @@ class Atoms_info:
         #we are double counting the energy, so /2
         return numpy.sum(potential_energy)
 
-    #function get sequence a and b
-    #input: opened input file
+    #function calculate the energy 
+    #input: input file value specified in self
     #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery  
     def cal_energy(self):
         kinetic_energy = self.cal_kinetic()
@@ -238,9 +244,9 @@ class Atoms_info:
         return [kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery]
     
  
-    #function get sequence a and b    
-    #input: opened input file
-    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
+    #function calculate the force 
+    #input: input file value specified in self
+    #output: matrixes of force 
     def update_force(self):
         #bonded force
         for atom_i,atom_j in zip(self.bond_pair[0],self.bond_pair[1]):
@@ -259,9 +265,11 @@ class Atoms_info:
             self.force[atom_j] -= force_vec
 
     
-    #function get sequence a and b    
-    #input: opened input file
-    #output: a list of kinetic_energy,bond_pot_energy,nonbond_pot_energy,total_energery 
+    #function main update function
+    #input: force and position
+    #output: new a, force and postion
+    # connectivities every 10 time steps, including at t=0, concatenated together into one RVC output file,
+    # like the example. (In other words, you should write to the output before any steps have been taken, after 
     def update_velocity_verlet(self):
         #clear up force
         self.force = numpy.zeros((len(self.pos_matrix),3))
@@ -277,7 +285,7 @@ class Atoms_info:
 
 #function: the main function of this project
 #input: read in the input file with k value
-#output: clusters of points based on centroid provided or generated
+#output: generate energy and frame files
 def main():
     #initinize files and get I/O file names
     # input values
@@ -305,24 +313,9 @@ def main():
     #close the output file
     protein.close_output()
         
-    #output
-#     The ERG file should contain your energy values at every 10th time step.  
-#     The lines should be tab-delimited, with the time step number in the first column, 
-#     the kinetic energy in the second column, the bond potential energy in the third column, 
-#     the nonbond potential energy in the fourth column, and the total energy in the last column.
-#      All values should be written out to exactly 1 decimal place.
-
-#     The RVC output file will look very similar to the input RVC file, but is tab-delimited. 
-#     During simulation, you should output all the atoms' IDs (1-indexed), positions, velocities and
-#      connectivities every 10 time steps, including at t=0, concatenated together into one RVC output file,
-#       like the example. (In other words, you should write to the output before any steps have been taken, after 
-#     10 steps, after 20 steps, etc.)  You should include the original input RVC file and you should use 
-#     1000 as the default number of total steps (feel free to perform longer simulations if you have the time and 
-#     inclination), so you should have about 100 frames in your output file. Positions and velocities should be
-#      written out to exactly 4 decimal places.
-    # #At time step 610,energy = 273.911kJ is an example of in-between frame
 
 
+#run the main function
 if __name__ == '__main__':
     main()        
         
